@@ -10,5 +10,5 @@ function testreader(row, col, sval)
     return sval
 end
 
-csv = readcsv2("testdata.csv", colreaders=(testreader))
+csv = readcsv2("testdata.csv", colreaders=(testreader,))
 
