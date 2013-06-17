@@ -9,11 +9,12 @@ type CSVFile
     coltypes::Tuple
     colreaders::Tuple
     cells::Array{Any, 2}
+    has_header::Bool
 
-    function CSVFile(fname::String, coltypes::Tuple=(), colreaders::Tuple=(), eol::Char='\n', sep::Char=',', quot::Union(Char,Nothing)=nothing)
+    function CSVFile(fname::String, coltypes::Tuple=(), colreaders::Tuple=(), eol::Char='\n', sep::Char=',', quot::Union(Char,Nothing)=nothing, has_header::Bool=false)
         buff = readall_bytes(fname)
         s = bytestring(buff)
-        println("read all bytes")
+        #println("read all bytes")
 
         nrows, ncols = find_dims(s, eol, sep, quot)
         println("dimensions: $nrows x $ncols")
@@ -27,11 +28,11 @@ type CSVFile
 
         offsets = zeros(Int, nrows, ncols)
         cells = Array(Any, nrows, ncols)
-        println("allocated offsets")
+        #println("allocated offsets")
 
-        csv = new(fname, offsets, s, ncols, eol, sep, quot, coltypes, colreaders, cells)
+        csv = new(fname, offsets, s, ncols, eol, sep, quot, coltypes, colreaders, cells, has_header)
         read_offsets(csv, s)
-        println("read offsets")
+        #println("read offsets")
         csv
     end
 end
@@ -82,7 +83,7 @@ end
 
 read_offsets(csv, sbuff::ASCIIString) = read_offsets(sbuff.data, uint8(csv.eol), uint8(csv.sep), (nothing == csv.quot) ? nothing : uint8(csv.quot), csv.offsets)
 read_offsets(csv, sbuff::UTF8String) = read_offsets(sbuff, csv.eol, csv.sep, csv.quot, csv.offsets)
-function read_offsets(dbuff, eol, sep, quot, offsets)
+function read_offsets(dbuff, eol, sep, quot, offsets::Array{Int,2})
     col = 0
     row = 1
     maxrow,maxcol = size(offsets)
@@ -107,48 +108,59 @@ function read_offsets(dbuff, eol, sep, quot, offsets)
     end
 end
 
-function _get_start_pos(csv::CSVFile, row::Int, col::Int)
+function _get_start_pos(ncols::Int, offsets::Array{Int,2}, row::Int, col::Int)
     (row == 1) && (col == 1) && return 1
     prev_pos_row = (1 == col) ? (row-1) : row
-    prev_pos_col = (1 == col) ? csv.ncols : (col-1)
+    prev_pos_col = (1 == col) ? ncols : (col-1)
    
-    ret = csv.offsets[prev_pos_row, prev_pos_col] 
+    ret = offsets[prev_pos_row, prev_pos_col] 
     (ret == 0) ? _get_start_pos(csv, prev_pos_row, prev_pos_col) : (ret+2)
 end
 
 function fillall(csv::CSVFile)
-    println("filling up")
+    #println("filling up")
     maxrow,maxcol = size(csv.cells)
     tmp64 = Array(Float64,1)
     tmp32 = Array(Float32,1)
+    sbuff = csv.sbuff
+    offsets = csv.offsets
+    colreaders = csv.colreaders
+    coltypes = csv.coltypes
+    cells = csv.cells
+    suptypes = [super(typ) for typ in coltypes]
+    hascolreaders = (length(colreaders) > 0)
+    has_header = csv.has_header
     for row in 1:maxrow
         for col in 1:maxcol
-            start_pos = _get_start_pos(csv, row, col)
-            end_pos = csv.offsets[row,col]
-            sval = SubString(csv.sbuff, start_pos, end_pos)
-            if(length(csv.colreaders) > 0)
-                f = csv.colreaders[col]
-                csv.cells[row,col] = f(row, col, sval)
+            start_pos = _get_start_pos(maxcol, offsets, row, col)
+            end_pos = offsets[row,col]
+            sval = SubString(sbuff, start_pos, end_pos)
+
+            has_header && (1 == row) && (cells[row,col] = sval; continue)
+
+            if(hascolreaders)
+                f = colreaders[col]
+                cells[row,col] = f(row, col, sval)
             else
-                typ = csv.coltypes[col]
-                styp = super(typ)
+                typ = coltypes[col]
+                styp = suptypes[col]
 
                 if((styp == Signed) || (styp == Unsigned))
-                    csv.cells[row,col] = parseint(typ, sval)
+                    cells[row,col] = parseint(typ, sval)
                 elseif((styp == String) || (styp == Any))
-                    csv.cells[row,col] = sval
+                    cells[row,col] = sval
                 elseif((typ == Float64) && float64_isvalid(row[j], tmp64))
-                    csv.cells[row,col] = tmp64[1]
+                    cells[row,col] = tmp64[1]
                 elseif((typ == Float32) && float32_isvalid(row[j], tmp32))
-                    csv.cells[row,col] = tmp32[1]
+                    cells[row,col] = tmp32[1]
                 else
                     error("unknown type $typ")
                 end
             end
         end
-        if(0 == (row % 10000))
-            println("$row of $maxrow")
-        end
+        #if(0 == (row % 10000))
+        #    println("$row of $maxrow")
+        #end
     end
 end
 
