@@ -1,0 +1,12 @@
+julia -e 'println("let result = "); println(readcsv("comma_in_quotes.csv", has_header=true)); println("@assert readcsv(\"comma_in_quotes.csv\", has_header=true) == result"); println("end")' > ../jl/comma_in_quotes.jl
+julia -e 'println("let result = "); println(readcsv("empty.csv", has_header=true)); println("@assert readcsv(\"empty.csv\", has_header=true) == result"); println("end")' > ../jl/empty.jl
+julia -e 'println("let result = "); println(readcsv("empty_crlf.csv", has_header=true)); println("@assert readcsv(\"empty_crlf.csv\", has_header=true) == result"); println("end")' > ../jl/empty_crlf.jl
+julia -e 'println("let result = "); println(readcsv("escaped_quotes.csv", has_header=true)); println("@assert readcsv(\"escaped_quotes.csv\", has_header=true) == result"); println("end")' > ../jl/escaped_quotes.jl
+julia -e 'println("let result = "); println(readcsv("json.csv", has_header=true)); println("@assert readcsv(\"json.csv\", has_header=true) == result"); println("end")' > ../jl/json.jl
+julia -e 'println("let result = "); println(readcsv("newlines.csv", has_header=true)); println("@assert readcsv(\"newlines.csv\", has_header=true) == result"); println("end")' > ../jl/newlines.jl
+julia -e 'println("let result = "); println(readcsv("newlines_crlf.csv", has_header=true)); println("@assert readcsv(\"newlines_crlf.csv\", has_header=true) == result"); println("end")' > ../jl/newlines_crlf.jl
+julia -e 'println("let result = "); println(readcsv("quotes_and_newlines.csv", has_header=true)); println("@assert readcsv(\"quotes_and_newlines.csv\", has_header=true) == result"); println("end")' > ../jl/quotes_and_newlines.jl
+julia -e 'println("let result = "); println(readcsv("simple.csv", has_header=true)); println("@assert readcsv(\"simple.csv\", has_header=true) == result"); println("end")' > ../jl/simple.jl
+julia -e 'println("let result = "); println(readcsv("simple_crlf.csv", has_header=true)); println("@assert readcsv(\"simple_crlf.csv\", has_header=true) == result"); println("end")' > ../jl/simple_crlf.jl
+julia -e 'println("let result = "); println(readcsv("utf8.csv", has_header=true)); println("@assert readcsv(\"utf8.csv\", has_header=true) == result"); println("end")' > ../jl/utf8.jl
+julia -e 'println("let result = "); println(readcsv("empty_crlf.csv", has_header=true)); println("@assert readcsv(\"empty_crlf.csv\", has_header=true) == result"); println("end")' > ../jl/empty_crlf.jl
